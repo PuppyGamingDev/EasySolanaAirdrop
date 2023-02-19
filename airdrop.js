@@ -1,5 +1,6 @@
 // Initial imports
 const { PublicKey, clusterApiUrl, Connection, Keypair, Transaction, SystemProgram, LAMPORTS_PER_SOL, sendAndConfirmTransaction } = require('@solana/web3.js')
+const fs = require('node:fs')
 const key = require('./key.json')
 const wallets = require('./wallets.json')
 const total = process.argv[2]
@@ -17,7 +18,7 @@ const split = total / wallets.length * LAMPORTS_PER_SOL // amount to receive per
 async function BuildAndSend() {
     console.log(`Spreading ${total} SOL to ${wallets.length} wallets`)
     console.log(`Wallets will receive ${total / wallets.length} SOL each..`)
-
+    var transactionIds = []
     // Split wallets up into *Batches* to group into a smaller amount of overall transactions
     const walletbatches = wallets.reduce((resultArray, item, index) => {
         const chunkIndex = Math.floor(index / perChunk)
@@ -46,8 +47,13 @@ async function BuildAndSend() {
         // Submits and awaits confirmation of the created Transaction
         const signature = await sendAndConfirmTransaction(connection, transaction, [keypair]);
         console.log(signature) // Just logging in console to view progress
+        transactionIds.push(signature)
     }
-    console.log(`Airdrop Complete`)
+    console.log(`Airdrop Complete, writing Transaction IDs to file...`)
+    fs.writeFile(`./transactions.json`, JSON.stringify(transactionIds, null, 2), finished);
+    function finished(err) {
+        console.log(`Transactions written! All finished!`);
+    }
 }
 
 BuildAndSend() // Run the function on script start
